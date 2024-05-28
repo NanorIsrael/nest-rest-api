@@ -6,6 +6,8 @@ import {
   Delete,
   Param,
   Body,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Observable } from 'rxjs';
@@ -16,8 +18,20 @@ export class UserController {
   constructor(private readonly reqresService: UserService) {}
 
   @Post('users')
-  createUser(@Body() user: any): Observable<AxiosResponse<any>> {
-    return this.reqresService.createUser(user);
+  async createUser(@Body() user: any) {
+    try {
+      const results = await this.reqresService.createUser(user);
+      if (!results) {
+        throw new HttpException(
+          'failed to create user',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      return results;
+    } catch (error) {
+      console.log(error.cause); //this will be replaced with a proper logger
+      throw new HttpException('Server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get('users')
