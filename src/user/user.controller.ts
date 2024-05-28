@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Delete,
   Param,
   Body,
@@ -10,15 +9,14 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { Observable } from 'rxjs';
-import { AxiosResponse } from 'axios';
+import { CreateUserDto } from './user-dto';
 
 @Controller('api')
 export class UserController {
   constructor(private readonly reqresService: UserService) {}
 
   @Post('users')
-  async createUser(@Body() user: any) {
+  async createUser(@Body() user: CreateUserDto) {
     try {
       const results = await this.reqresService.createUser(user);
       if (!results) {
@@ -29,31 +27,41 @@ export class UserController {
       }
       return results;
     } catch (error) {
-      console.log(error.cause); //this will be replaced with a proper logger
+      console.log(error); //this will be replaced with a proper logger
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException('Server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Get('users')
-  getUsers(): Observable<AxiosResponse<any>> {
-    return this.reqresService.getUsers();
+  @Get('user/:id/avatar')
+  getUserAvatar(@Param('id') id: number): Promise<any> {
+    return this.reqresService.getUserAvatar(id);
   }
 
-  @Get('users/:id')
-  getUser(@Param('id') id: number): Observable<AxiosResponse<any>> {
-    return this.reqresService.getUser(id);
+  @Get('user/:id')
+  async getUser(@Param('id') id: number) {
+    return await this.reqresService.getUser(id);
   }
 
-  @Put('users/:id')
-  updateUser(
-    @Param('id') id: number,
-    @Body() user: any,
-  ): Observable<AxiosResponse<any>> {
-    return this.reqresService.updateUser(id, user);
-  }
-
-  @Delete('users/:id')
-  deleteUser(@Param('id') id: number): Observable<AxiosResponse<any>> {
-    return this.reqresService.deleteUser(id);
+  @Delete('user/:id/avatar')
+  async deleteUserAvatar(@Param('id') id: number) {
+    try {
+      const result = await this.reqresService.deleteUserAvatar(id);
+      if (!result) {
+        throw new HttpException(
+          'user avatar does not exist',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      return result;
+    } catch (error) {
+      console.log(error); //this will be replaced with a proper logger
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
